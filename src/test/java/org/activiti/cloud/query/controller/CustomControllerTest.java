@@ -9,9 +9,11 @@ import org.activiti.cloud.services.query.app.repository.TaskRepository;
 import org.activiti.cloud.services.query.app.repository.TaskVariableRepository;
 import org.activiti.cloud.services.query.model.TaskEntity;
 import org.activiti.cloud.services.query.model.TaskVariableEntity;
+import org.activiti.cloud.services.security.ActivitiForbiddenException;
 import org.activiti.cloud.services.security.TaskLookupRestrictionService;
 import org.activiti.core.common.spring.security.policies.SecurityPoliciesManager;
 import org.activiti.core.common.spring.security.policies.conf.SecurityPoliciesProperties;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +23,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 import java.util.*;
 
@@ -50,6 +55,9 @@ public class CustomControllerTest {
     private TaskRepository taskRepository;
 
     @MockBean
+    private TaskVariableRepository variableRepository;
+
+    @MockBean
     private EntityFinder entityFinder;
 
     @MockBean
@@ -67,8 +75,17 @@ public class CustomControllerTest {
     @MockBean
     private SecurityPoliciesProperties securityPoliciesProperties;
 
-    @MockBean
-    private TaskVariableRepository variableRepository;
+    @Before
+    public void setUp() {
+        assertThat(taskRepository).isNotNull();
+        assertThat(variableRepository).isNotNull();
+        assertThat(entityFinder).isNotNull();
+        assertThat(taskLookupRestrictionService).isNotNull();
+        assertThat(securityManager).isNotNull();
+        assertThat(securityPoliciesManager).isNotNull();
+        assertThat(processDefinitionRepository).isNotNull();
+        assertThat(securityPoliciesProperties).isNotNull();
+    }
 
     @Test
     public void testABPMNendpoint() throws Exception {
@@ -209,5 +226,17 @@ public class CustomControllerTest {
                 UUID.randomUUID().toString());
         variableEntity.setValue("John");
         return variableEntity;
+    }
+
+    @ExceptionHandler(ActivitiForbiddenException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String handleAppException(ActivitiForbiddenException ex) {
+        return ex.getMessage();
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public String handleAppException(IllegalStateException ex) {
+        return ex.getMessage();
     }
 }
