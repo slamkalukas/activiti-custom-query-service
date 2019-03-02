@@ -98,8 +98,24 @@ public class CustomController {
         return taskResourceAssembler.toResource(taskEntity);
     }
 
+    @RequestMapping(value = "/tasks", method = RequestMethod.GET)
+    public PagedResources<TaskResource> getTasks(@QuerydslPredicate(root = TaskEntity.class) Predicate predicate,
+                                                 Pageable pageable) {
+        Predicate extendedPredicate = predicate;
+
+        BooleanExpression parentTaskNull = QTaskEntity.taskEntity.parentTaskId.isNull();
+        extendedPredicate= extendedPredicate !=null ? parentTaskNull.and(extendedPredicate) : parentTaskNull;
+
+        Page<TaskEntity> tasks = taskRepository.findAll(extendedPredicate,
+                pageable);
+
+        return pagedTaskResourcesAssembler.toResource(pageable,
+                tasks,
+                taskResourceAssembler);
+    }
+
     @RequestMapping(value = "/{taskId}/new", method = RequestMethod.GET)
-    public PagedResources<TaskResource> getVariables1(@PathVariable String taskId,
+    public PagedResources<TaskResource> getTasksNew(@PathVariable String taskId,
                                                          @QuerydslPredicate(root = TaskEntity.class) Predicate predicate,
                                                          Pageable pageable) {
 

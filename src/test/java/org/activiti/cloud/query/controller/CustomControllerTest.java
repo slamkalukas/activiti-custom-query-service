@@ -126,6 +126,28 @@ public class CustomControllerTest {
     }
 
     @Test
+    public void taskFinder() throws Exception {
+        //given
+
+        PageRequest pageRequest = PageRequest.of(1,10);
+
+        TaskEntity taskEntity = buildDefaultTask();
+
+        given(taskRepository.findAll(any(), eq(pageRequest)))
+                .willReturn(new PageImpl<>(Collections.singletonList(taskEntity), pageRequest, 11));
+
+        //when
+        MvcResult mvcResult = mockMvc.perform(get("/abpm/tasks?page=1&size=10",
+                taskEntity.getId())
+                .accept(MediaTypes.HAL_JSON_VALUE))
+                //then
+                .andExpect(status().isOk())
+                .andReturn();
+
+        assertThat(mvcResult).isNotNull();
+    }
+
+    @Test
     public void variableFinderTest() throws Exception {
         //given
         PageRequest pageRequest = PageRequest.of(1,10);
